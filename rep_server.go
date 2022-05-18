@@ -34,7 +34,6 @@ func (r *Req) Connect(ip string) error {
 
 func (r *Req) Receive() {
 	defer func() {
-		fmt.Println("服务器已经断开")
 		ServerListen.unregister <- r
 		r.conn.Close()
 		r.Connected = false

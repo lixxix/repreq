@@ -14,7 +14,7 @@ func TestClient(t *testing.T) {
 			return
 		}
 
-		rec := client.Request("hello")
+		rec := client.Request([]byte("hello"))
 		panic(string(rec))
 	}
 }

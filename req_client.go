@@ -1,7 +1,6 @@
 package repreq
 
 import (
-	"fmt"
 	"net"
 	"time"
 )
@@ -26,12 +25,15 @@ func (t *ReqClient) Connect(address string) error {
 	return nil
 }
 
+func (t *ReqClient) SetTimeOut(duration time.Duration) {
+	t.timeOut = duration
+}
+
 func (t *ReqClient) Reading() {
 	defer func() {
 		t.conn.Close()
 		t.connected = false
 	}()
-	fmt.Println("start recv")
 	tempbuff := make([]byte, 4096)
 	for {
 		sz, err := t.conn.Read(tempbuff)
@@ -42,8 +44,8 @@ func (t *ReqClient) Reading() {
 	}
 }
 
-func (t *ReqClient) Request(key string) []byte {
-	t.conn.Write([]byte(key))
+func (t *ReqClient) Request(buf []byte) []byte {
+	t.conn.Write(buf)
 	ticker := time.NewTicker(t.timeOut)
 	for {
 		select {
@@ -53,7 +55,6 @@ func (t *ReqClient) Request(key string) []byte {
 			return []byte{}
 		}
 	}
-	// return <-t.recv
 }
 
 func (t *ReqClient) Run() {
