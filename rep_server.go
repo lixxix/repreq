@@ -7,9 +7,8 @@ import (
 )
 
 type Req struct {
-	conn      net.Conn
-	Connected bool // true if
-	call      IMessage
+	conn net.Conn
+	call IMessage
 }
 
 type IMessage interface {
@@ -20,23 +19,11 @@ type IRespone interface {
 	OnRespone(buf []byte) []byte
 }
 
-func (r *Req) Connect(ip string) error {
-	conn, err := net.Dial("tcp", ip)
-	if err != nil {
-		return err
-	}
-
-	r.conn = conn
-	r.Connected = true
-	go r.Receive()
-	return nil
-}
-
 func (r *Req) Receive() {
 	defer func() {
+		fmt.Println("Client disconnected")
 		ServerListen.unregister <- r
 		r.conn.Close()
-		r.Connected = false
 	}()
 	buff := make([]byte, 4096)
 	for {
@@ -56,14 +43,14 @@ func (r *Req) Send(data []byte) {
 }
 
 func (r *Req) Run() {
+	ServerListen.register <- r
 	go r.Receive()
 }
 
 func NewReqClient(conn net.Conn, call IMessage) *Req {
 	return &Req{
-		conn:      conn,
-		call:      call,
-		Connected: false,
+		conn: conn,
+		call: call,
 	}
 }
 
@@ -99,27 +86,26 @@ func (r *Rep) Listen(addr string) error {
 }
 
 func (r *Rep) OnMessage(buf []byte, req *Req) {
-	// 回复
-	r.MutexReq.Lock()
+	// 可以再Respone中看情况加锁
+	// r.MutexReq.Lock()
 	if r.ResponeCall != nil {
 		req.Send(r.ResponeCall.OnRespone(buf))
 	} else {
 		rc := "recv:" + string(buf)
 		req.Send([]byte(rc))
 	}
-
-	r.MutexReq.Unlock()
+	// r.MutexReq.Unlock()
 }
 
 func (r *Rep) Run() {
-	fmt.Println("request服务器开启")
+	fmt.Println("Server Started")
 	for {
 		select {
 		case client := <-r.register:
+			fmt.Println("client connected")
 			r.Mutex.Lock()
 			r.clients[client] = true
 			r.Mutex.Unlock()
-			fmt.Println("激活")
 		case client := <-r.unregister:
 			r.Mutex.Lock()
 			if _, ok := r.clients[client]; ok {

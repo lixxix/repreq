@@ -63,3 +63,5 @@ func main() {
 `serv := repreq.RepServer(&Respone{})`设置了处理消息的回调方法客户端的运行结果将改变
 
 `my respone :whatever`
+
+服务器自动重连功能！
